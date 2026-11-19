@@ -2,19 +2,37 @@
 
 Терминальный менеджер локальных Minecraft Java Edition серверов на Go и Bubble Tea. Поддерживает Vanilla, Paper, Purpur, Fabric, Quilt, Forge и NeoForge. Панель управления открывается клавишей **F2** из библиотеки или консоли.
 
-## Запуск
+## Быстрый старт
 
-Из папки `Glumine-CLI` с Go 1.25 или новее:
+Для запуска из исходников установите Go 1.25 или новее. CLI обращается к интернету для получения каталогов и загрузки выбранного ядра. Java можно выбрать или скачать при настройке сервера.
 
 ```sh
+git clone https://github.com/voxelsavage/Glumine-CLI.git
+cd Glumine-CLI
 go run .
 ```
 
-Собрать исполняемый файл:
+В библиотеке нажмите **N**, чтобы создать первый сервер. Для существующего сервера **Enter** открывает консоль, а **F2** — панель управления.
+
+## Сборка
+
+**Linux**
 
 ```sh
 go build -o glumine-cli .
+./glumine-cli
 ```
+
+**Windows (PowerShell)**
+
+```powershell
+go build -o Glumine-CLI.exe .
+.\Glumine-CLI.exe
+```
+
+GitHub Actions проверяет код и собирает программу для Linux x64 и Windows x64. После успешного запуска готовые бинарники доступны в разделе **Artifacts**. [Сборки Glumine CLI](https://github.com/voxelsavage/Glumine-CLI/actions/workflows/build.yml)
+
+## Выбор Java
 
 Внизу формы создания находится синяя кнопка **Выбрать Java**. Стрелками выберите один из двух режимов и нажмите **Enter**.
 
