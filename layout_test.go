@@ -27,14 +27,14 @@ func TestScreenFitsTerminal(t *testing.T) {
 				}
 			}
 		}
-		check("Создать")
+		check(tr("Создать сервер"))
 		m.listKey("n")
-		check("Сборка ядра")
+		check(tr("Сборка ядра"))
 		p := profile{Name: strings.Repeat("Большой мир ", 12), Version: "1.21.1", Java: 21, Memory: 2048, Port: 25565, dir: "world"}
 		m.profiles = []profile{p}
 		m.screen = listScreen
-		check("Остановлен")
+		check(tr("○ Остановлен"))
 		m.listKey("enter")
-		check("журнал сервера")
+		check(strings.Fields(tr("Здесь появится журнал сервера."))[0])
 	}
 }

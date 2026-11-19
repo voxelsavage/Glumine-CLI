@@ -77,7 +77,7 @@ func coreOptions(ctx context.Context, version string) ([]string, error) {
 	}
 	slices.Sort(options[1:])
 	if len(missing) > 0 {
-		return options, fmt.Errorf("недоступны каталоги: %s", strings.Join(missing, ", "))
+		return options, fmt.Errorf(tr("недоступны каталоги: %s"), strings.Join(missing, ", "))
 	}
 	return options, nil
 }
@@ -124,7 +124,7 @@ func paperArtifact(ctx context.Context, p profile) (artifact, error) {
 			}
 		}
 	}
-	return artifact{}, errors.New("выбранная сборка Paper недоступна")
+	return artifact{}, errors.New(tr("выбранная сборка Paper недоступна"))
 }
 func downloadFabric(ctx context.Context, dest string, p profile) error {
 	var installers []fabricVersion
@@ -151,7 +151,7 @@ func downloadFabric(ctx context.Context, dest string, p profile) error {
 			return err
 		}
 		if n > limit {
-			return errors.New("слишком большой Fabric launcher")
+			return errors.New(tr("слишком большой Fabric launcher"))
 		}
 		jar, err := zip.OpenReader(dest)
 		if err != nil {
@@ -161,5 +161,5 @@ func downloadFabric(ctx context.Context, dest string, p profile) error {
 		_, err = jar.Open("META-INF/MANIFEST.MF")
 		return err
 	}
-	return errors.New("стабильный установщик Fabric недоступен")
+	return errors.New(tr("стабильный установщик Fabric недоступен"))
 }

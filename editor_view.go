@@ -97,7 +97,7 @@ func (e *codeEditor) outlineRows(width, height int, focused bool) []string {
 	if focused {
 		idx = e.outlineIndex
 	}
-	out := []string{surface("  "+tint("СТРУКТУРА", mint, true), width, panel)}
+	out := []string{surface("  "+tint(tr("СТРУКТУРА"), mint, true), width, panel)}
 	available := max(1, height-1)
 	start := max(0, min(idx-available/2, len(e.syntax.symbols)-available))
 	for r := 0; r < height-1; r++ {
@@ -112,18 +112,20 @@ func (e *codeEditor) outlineRows(width, height int, focused bool) []string {
 			}
 			line = marker + paired(ansi.Truncate(oneLine(s.name), max(1, width-9), "…"), label(strconv.Itoa(s.row+1)), width-3)
 		} else if r == 0 {
-			line = label("  Нет разделов")
+			line = label(tr("  Нет разделов"))
 		}
 		out = append(out, surface(line, width, bg))
 	}
 	return out
 }
 
-var editorHelp = []string{"Клавиши редактора", "Ctrl+S   Сохранить     Esc   Закрыть", "Ctrl+Z / Ctrl+Y   Отмена / повтор", "Shift + стрелки   Выделить   Ctrl+A   Всё", "Ctrl+C / X / V    Копировать / вырезать / вставить", "Ctrl+F   Поиск    F3 / Alt+P   Вперёд / назад", "Ctrl+R   Заменить совпадение", "Ctrl+G   К строке    F4   Структура", "Tab / Shift+Tab   Отступ / убрать отступ", "Ctrl+←/→   По словам   Ctrl+Home/End   Начало / конец"}
+func editorHelp() []string {
+	return []string{tr("Клавиши редактора"), tr("Ctrl+S   Сохранить     Esc   Закрыть"), tr("Ctrl+Z / Ctrl+Y   Отмена / повтор"), tr("Shift + стрелки   Выделить   Ctrl+A   Всё"), tr("Ctrl+C / X / V    Копировать / вырезать / вставить"), tr("Ctrl+F   Поиск    F3 / Alt+P   Вперёд / назад"), tr("Ctrl+R   Заменить совпадение"), tr("Ctrl+G   К строке    F4   Структура"), tr("Tab / Shift+Tab   Отступ / убрать отступ"), tr("Ctrl+←/→   По словам   Ctrl+Home/End   Начало / конец")}
+}
 
 func (e *codeEditor) view(w, h int, status string) string {
 	if w < 32 || h < 9 {
-		return ansi.Truncate("Glumine · увеличьте окно", max(1, w), "")
+		return ansi.Truncate(tr("Glumine · увеличьте окно"), max(1, w), "")
 	}
 	inner := w - 2
 	height := h - 5
@@ -145,19 +147,19 @@ func (e *codeEditor) view(w, h int, status string) string {
 	if col >= e.left+columns {
 		e.left = col - columns + 1
 	}
-	language := "Текст"
+	language := tr("Текст")
 	if e.lexer != nil {
 		language = e.lexer.Config().Name
 	}
-	title := tint(" ◆ ", mint, true) + heading("GLUMINE") + label("  /  Редактор")
+	title := tint(" ◆ ", mint, true) + heading("GLUMINE") + label(tr("  /  Редактор"))
 	badge := language
 	if e.readonly {
-		badge += "  ·  Чтение"
+		badge += tr("  ·  Чтение")
 	}
 	name := oneLine(filepath.ToSlash(e.path))
 	state := ""
 	if e.text != e.saved {
-		state = tint("  ● Изменён", gold, true)
+		state = tint(tr("  ● Изменён"), gold, true)
 	}
 	lines := []string{surface(paired(title, label(badge+" "), w), w, canvas), surface("  "+heading(name)+state, w, panel)}
 	var right []string
@@ -170,8 +172,8 @@ func (e *codeEditor) view(w, h int, status string) string {
 		overlay = e.outlineRows(inner, height, true)
 	case "help":
 
-		offset := min(e.helpTop, max(0, len(editorHelp)-height))
-		for _, s := range editorHelp[offset:] {
+		offset := min(e.helpTop, max(0, len(editorHelp())-height))
+		for _, s := range editorHelp()[offset:] {
 			overlay = append(overlay, surface("  "+s, inner, panel))
 		}
 	}
@@ -199,32 +201,32 @@ func (e *codeEditor) view(w, h int, status string) string {
 	}
 	switch e.mode {
 	case "close":
-		message = tint("Сохранить?  S Да  D Сбросить  Esc Назад", gold, true)
+		message = tint(tr("Сохранить?  S Да  D Сбросить  Esc Назад"), gold, true)
 	case "search", "needle", "replacement", "goto":
-		caption := map[string]string{"search": "Найти", "needle": "Что заменить", "replacement": "Заменить на", "goto": "Строка"}[e.mode]
+		caption := map[string]string{"search": tr("Найти"), "needle": tr("Что заменить"), "replacement": tr("Заменить на"), "goto": tr("Строка")}[e.mode]
 		e.field.Width = max(5, inner-lipgloss.Width(caption)-4)
 		message = tint(caption+"  › ", mint, true) + e.field.View()
 		if e.notice != "" {
 			message = ansi.Truncate(message, inner/2, "…") + " " + label(e.notice)
 		}
 	case "help":
-		message = "↑↓ Прокрутка   Esc Назад"
+		message = tr("↑↓ Прокрутка   Esc Назад")
 	case "outline":
-		message = "↑↓ Выбор раздела   Enter Перейти   Esc Назад"
+		message = tr("↑↓ Выбор раздела   Enter Перейти   Esc Назад")
 	}
 	lines = append(lines, surface(" "+message, w, canvas))
 	encoding := "UTF-8"
 	if e.bom != "" {
 		encoding += " BOM"
 	}
-	position := fmt.Sprintf(" Стр %d/%d  Кол %d", row+1, len(e.lines), col+1)
+	position := fmt.Sprintf(tr(" Стр %d/%d  Кол %d"), row+1, len(e.lines), col+1)
 	lines = append(lines, surface(paired(tint(position, mint, true), label(encoding+"  "+e.endings+" "), w), w, panel))
-	keys := " ^S Сохранить   ^F Поиск   ^R Замена   ^G Строка   F4 Структура   F1 Клавиши   Esc Назад"
+	keys := tr(" ^S Сохранить   ^F Поиск   ^R Замена   ^G Строка   F4 Структура   F1 Клавиши   Esc Назад")
 	if w < 89 {
-		keys = " ^S Запись   ^F Поиск   F1 Клавиши   Esc"
+		keys = tr(" ^S Запись   ^F Поиск   F1 Клавиши   Esc")
 	}
 	if w < 43 {
-		keys = " ^S Запись  ^F Поиск  F1  Esc"
+		keys = tr(" ^S Запись  ^F Поиск  F1  Esc")
 	}
 	lines = append(lines, surface(label(keys), w, canvas))
 	return strings.Join(lines, "\n")

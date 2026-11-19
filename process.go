@@ -57,7 +57,7 @@ func findJava(ctx context.Context, override string, minimum int) (string, error)
 		}
 		match := javaVersion.FindSubmatch(output)
 		if len(match) != 2 {
-			lastErr = errors.New("could not read Java version")
+			lastErr = errors.New(tr("не удалось определить версию Java"))
 			continue
 		}
 		major, err := strconv.Atoi(string(match[1]))
@@ -68,9 +68,9 @@ func findJava(ctx context.Context, override string, minimum int) (string, error)
 		if major == minimum || minimum >= 21 && major > minimum {
 			return path, nil
 		}
-		lastErr = fmt.Errorf("found Java %d", major)
+		lastErr = fmt.Errorf(tr("найдена Java %d"), major)
 	}
-	return "", fmt.Errorf("Java %d required; set JAVA_HOME or use -java (%w)", minimum, lastErr)
+	return "", fmt.Errorf(tr("требуется Java %d, укажите JAVA_HOME или -java (%w)"), minimum, lastErr)
 }
 
 type consoleLog struct {
@@ -178,22 +178,22 @@ func (p *serverProcess) forwardInput(stdin io.WriteCloser) {
 
 func (p *serverProcess) send(command string) error {
 	if strings.ContainsAny(command, "\r\n") {
-		return errors.New("enter a single server command")
+		return errors.New(tr("введите одну команду сервера"))
 	}
 	select {
 	case <-p.done:
-		return errors.New("server has stopped")
+		return errors.New(tr("сервер остановлен"))
 	case <-p.stopping:
-		return errors.New("server is stopping")
+		return errors.New(tr("сервер останавливается"))
 	default:
 	}
 	select {
 	case <-p.stopping:
-		return errors.New("server is stopping")
+		return errors.New(tr("сервер останавливается"))
 	case p.input <- command:
 		return nil
 	default:
-		return errors.New("server command queue is full")
+		return errors.New(tr("очередь команд сервера заполнена"))
 	}
 }
 

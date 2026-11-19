@@ -55,7 +55,7 @@ func (m *model) schedule(status string, load pageLoader, apply func(panelPage) t
 }
 func openPage(load pageLoader) action {
 	return func(m *model) tea.Cmd {
-		return m.schedule("Загрузка…", load, func(p panelPage) tea.Cmd {
+		return m.schedule(tr("Загрузка…"), load, func(p panelPage) tea.Cmd {
 			m.panel.prompt = nil
 			p.load = load
 			m.panel.pages = append(m.panel.pages, p)
@@ -68,7 +68,7 @@ func (m *model) reload() tea.Cmd {
 	if p.load == nil {
 		return nil
 	}
-	return m.schedule("Обновление…", p.load, func(next panelPage) tea.Cmd {
+	return m.schedule(tr("Обновление…"), p.load, func(next panelPage) tea.Cmd {
 		next.cursor = min(p.cursor, max(0, len(next.rows)-1))
 		next.load = p.load
 		*p = next
@@ -105,7 +105,7 @@ func (m *model) confirm(title string, yes action) tea.Cmd {
 }
 func (m *model) stopped(p profile) bool {
 	if m.owner == p.dir && (m.process != nil || m.starting || m.restarting) {
-		m.report(errors.New("сначала остановите сервер в консоли"))
+		m.report(errors.New(tr("сначала остановите сервер в консоли")))
 		return false
 	}
 	return true
@@ -197,7 +197,7 @@ func (m *model) overviewView() ([]string, string) {
 	p := m.page()
 	w, left := m.contentWidth(), m.formWidth()
 	cell := (left - 2) / 2
-	lines := []string{heading("Управление сервером"), label("Выберите раздел"), ""}
+	lines := []string{heading(tr("Управление сервером")), label(tr("Выберите раздел")), ""}
 	for i := 0; i < len(p.rows); i += 2 {
 		leftCard := dashboardCard(p.rows[i], cell, p.cursor == i)
 		rightCard := dashboardCard(p.rows[i+1], cell, p.cursor == i+1)
@@ -207,7 +207,7 @@ func (m *model) overviewView() ([]string, string) {
 		lines = append(lines, "")
 	}
 	right := m.profileCard(m.profiles[m.cursor], w-left-2, m.bodyHeight())
-	return sideBySide(lines, left, right, w-left-2, m.bodyHeight()), "←→ ↑↓ Выбор раздела   Enter Открыть   Esc Назад"
+	return sideBySide(lines, left, right, w-left-2, m.bodyHeight()), tr("←→ ↑↓ Выбор раздела   Enter Открыть   Esc Назад")
 }
 func dashboardCard(row panelRow, width int, active bool) []string {
 	bg, mark := panel, "  "
@@ -221,20 +221,20 @@ func (m *model) panelView() ([]string, string) {
 	p := m.page()
 	w := m.contentWidth()
 	if m.panel.done != nil && m.panel.prompt != nil {
-		return []string{heading(oneLine(p.title)), "", label(m.status)}, "Esc Отменить"
+		return []string{heading(oneLine(p.title)), "", label(m.status)}, tr("Esc Отменить")
 	}
 	if q := m.panel.prompt; q != nil {
 		lines := []string{heading(oneLine(p.title)), ""}
 		lines = append(lines, strings.Split(ansi.Wordwrap(oneLine(q.title), w, ""), "\n")...)
 		if q.confirm {
-			return append(lines, "", tint("Y / Д   Подтвердить", gold, true)), "Esc Отменить"
+			return append(lines, "", tint(tr("Y / Д   Подтвердить"), gold, true)), tr("Esc Отменить")
 		}
 		lines = append(lines, "")
 		lines = append(lines, strings.Split(q.input.View(), "\n")...)
 		if q.multiline {
-			return lines, "Ctrl+S Сохранить   Esc Отмена"
+			return lines, tr("Ctrl+S Сохранить   Esc Отмена")
 		}
-		return lines, "Enter Применить   Esc Отмена"
+		return lines, tr("Enter Применить   Esc Отмена")
 	}
 	if m.panelColumns() == 2 {
 		return m.overviewView()
@@ -261,14 +261,14 @@ func (m *model) panelView() ([]string, string) {
 		lines = append(lines, surface(mark+name, width, bg))
 	}
 	if len(p.rows) == 0 {
-		lines = append(lines, label("Пока пусто"))
+		lines = append(lines, label(tr("Пока пусто")))
 	}
 	if len(p.rows) > c {
 		lines = append(lines, label(fmt.Sprintf("%d / %d", p.cursor+1, len(p.rows))))
 	}
-	keys := "↑↓ Выбор  Enter  R Обновить  Esc"
+	keys := tr("↑↓ Выбор  Enter  R Обновить  Esc")
 	if m.panel.done != nil {
-		keys = "Esc Отменить операцию"
+		keys = tr("Esc Отменить операцию")
 	}
 	if overview && m.cursor < len(m.profiles) {
 		server := m.profiles[m.cursor]
@@ -279,19 +279,19 @@ func (m *model) panelView() ([]string, string) {
 }
 func (m *model) serverPanel(p profile) {
 	m.enterPanel(panelPage{overview: true, title: p.Name, description: p.edition(), rows: []panelRow{
-		{"Консоль", "Команды и журнал", func(m *model) tea.Cmd {
+		{tr("Консоль"), tr("Команды и журнал"), func(m *model) tea.Cmd {
 			m.exitPanel()
 			if m.screen == listScreen {
 				return m.listKey("enter")
 			}
 			return nil
 		}},
-		{"Файлы", "Просмотр и редактор", openPage(directoryPage(p, "."))},
-		{"Базы данных", "SQLite", openPage(databaseList(p))},
-		{"Игроки", "Списки и модерация", openPage(playerPage(p))},
-		{"Резервные копии", "ZIP", openPage(backupPage(p, m.store))},
-		{"Дополнения", "Плагины и моды", openPage(addonPage(p))},
-		{"Сеть", "Адреса и порт", openPage(networkPage(p))},
-		{"Настройки", "Память и ядро", openPage(settingsPage(p, m.store))},
+		{tr("Файлы"), tr("Просмотр и редактор"), openPage(directoryPage(p, "."))},
+		{tr("Базы данных"), "SQLite", openPage(databaseList(p))},
+		{tr("Игроки"), tr("Списки и модерация"), openPage(playerPage(p))},
+		{tr("Резервные копии"), "ZIP", openPage(backupPage(p, m.store))},
+		{tr("Дополнения"), tr("Плагины и моды"), openPage(addonPage(p))},
+		{tr("Сеть"), tr("Адреса и порт"), openPage(networkPage(p))},
+		{tr("Настройки"), tr("Память и ядро"), openPage(settingsPage(p, m.store))},
 	}})
 }

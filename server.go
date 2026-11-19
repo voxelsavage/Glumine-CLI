@@ -96,7 +96,7 @@ func (s serverStore) list() ([]profile, string, error) {
 	})
 	warning := ""
 	if len(skipped) > 0 {
-		warning = "Не удалось прочитать profile.json: " + oneLine(strings.Join(skipped, ", "))
+		warning = tr("Не удалось прочитать profile.json: ") + oneLine(strings.Join(skipped, ", "))
 	}
 	return profiles, warning, nil
 }
@@ -161,7 +161,7 @@ func vanillaVersion(ctx context.Context, version string) (release, versionDetail
 	var manifest releaseManifest
 	var details versionDetails
 	if err := fetchJSON(ctx, manifestURL, &manifest); err != nil {
-		return release{}, details, fmt.Errorf("load Minecraft release list: %w", err)
+		return release{}, details, fmt.Errorf(tr("загрузка списка релизов Minecraft: %w"), err)
 	}
 	if strings.EqualFold(version, "latest") {
 		version = manifest.Latest.Release
@@ -169,15 +169,15 @@ func vanillaVersion(ctx context.Context, version string) (release, versionDetail
 	for _, item := range manifest.Versions {
 		if item.ID == version && item.Type == "release" {
 			if err := fetchJSON(ctx, item.URL, &details); err != nil {
-				return item, details, fmt.Errorf("load Minecraft version metadata: %w", err)
+				return item, details, fmt.Errorf(tr("загрузка сведений о версии Minecraft: %w"), err)
 			}
 			if details.Downloads.Server.URL == "" {
-				return item, details, fmt.Errorf("Minecraft %s has no downloadable server", version)
+				return item, details, fmt.Errorf(tr("для Minecraft %s нет серверного пакета"), version)
 			}
 			return item, details, nil
 		}
 	}
-	return release{}, details, fmt.Errorf("Minecraft release %q not found", version)
+	return release{}, details, fmt.Errorf(tr("релиз Minecraft %q не найден"), version)
 }
 
 func downloadJar(ctx context.Context, dest string, jar artifact) error {
@@ -200,7 +200,7 @@ func downloadJar(ctx context.Context, dest string, jar artifact) error {
 		limit = 512 << 20
 	}
 	if limit <= 1 || len(expected) != digest.Size()*2 {
-		return errors.New("invalid server JAR metadata")
+		return errors.New(tr("некорректные данные серверного JAR"))
 	}
 	body, err := get(ctx, jar.URL)
 	if err != nil {
@@ -217,7 +217,7 @@ func downloadJar(ctx context.Context, dest string, jar artifact) error {
 		return err
 	}
 	if (jar.Size > 0 && size != jar.Size) || size >= limit || !strings.EqualFold(hex.EncodeToString(digest.Sum(nil)), expected) {
-		return errors.New("контрольная сумма или размер JAR не совпадает")
+		return errors.New(tr("контрольная сумма или размер JAR не совпадает"))
 	}
 	return nil
 }
@@ -235,7 +235,7 @@ func (s serverStore) create(ctx context.Context, p profile) (profile, error) {
 
 	if p.JavaMode == javaManual {
 		if p.JavaPath == "" {
-			return p, errors.New("не указан путь к Java")
+			return p, errors.New(tr("не указан путь к Java"))
 		}
 		valid, err := findJava(ctx, p.JavaPath, p.Java)
 		if err != nil {
@@ -248,7 +248,7 @@ func (s serverStore) create(ctx context.Context, p profile) (profile, error) {
 	switch p.coreName() {
 	case "Vanilla":
 		if p.Build != "" && p.Build != p.Version {
-			return p, errors.New("сборка Vanilla должна совпадать с версией Minecraft")
+			return p, errors.New(tr("сборка Vanilla должна совпадать с версией Minecraft"))
 		}
 		p.Build = p.Version
 	case "Forge", "NeoForge", "Quilt":
@@ -270,11 +270,11 @@ func (s serverStore) create(ctx context.Context, p profile) (profile, error) {
 			return p, err
 		}
 		if meta.Result != "SUCCESS" || meta.Build != p.Build || meta.Version != p.Version || len(meta.MD5) != 32 {
-			return p, errors.New("сборка Purpur недоступна")
+			return p, errors.New(tr("сборка Purpur недоступна"))
 		}
 		jar = artifact{URL: base + "/download", MD5: meta.MD5}
 	default:
-		return p, fmt.Errorf("неизвестное ядро %q", p.Core)
+		return p, fmt.Errorf(tr("неизвестное ядро %q"), p.Core)
 	}
 	staging, err := os.MkdirTemp(s.root, ".install-")
 	if err != nil {
@@ -288,7 +288,7 @@ func (s serverStore) create(ctx context.Context, p profile) (profile, error) {
 		err = downloadJar(ctx, dest, jar)
 	}
 	if err != nil {
-		return p, fmt.Errorf("download Minecraft server: %w", err)
+		return p, fmt.Errorf(tr("загрузка сервера Minecraft: %w"), err)
 	}
 
 	if err := os.WriteFile(filepath.Join(staging, "eula.txt"), []byte("# "+eulaURL+"\neula=false\n"), 0o600); err != nil {

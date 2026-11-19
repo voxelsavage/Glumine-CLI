@@ -20,7 +20,7 @@ import (
 
 func validName(name string) error {
 	if strings.TrimSpace(name) == "" || !filepath.IsLocal(name) || name == "." || filepath.Base(name) != name || strings.ContainsAny(name, `/\:`) || strings.HasPrefix(name, ".glumine-") {
-		return errors.New("укажите одно имя внутри каталога")
+		return errors.New(tr("укажите одно имя внутри каталога"))
 	}
 	return nil
 }
@@ -45,7 +45,7 @@ func smallFile(r *os.Root, rel string) ([]byte, error) {
 		return nil, err
 	}
 	if !info.Mode().IsRegular() {
-		return nil, errors.New("для редактора нужен обычный файл")
+		return nil, errors.New(tr("для редактора нужен обычный файл"))
 	}
 	file, err := r.Open(rel)
 	if err != nil {
@@ -57,14 +57,14 @@ func smallFile(r *os.Root, rel string) ([]byte, error) {
 		return nil, err
 	}
 	if !info.Mode().IsRegular() || info.Size() > editorLimit {
-		return nil, errors.New("редактор открывает текстовые файлы до 256 КиБ")
+		return nil, errors.New(tr("редактор открывает текстовые файлы до 256 КиБ"))
 	}
 	data, err := io.ReadAll(io.LimitReader(file, (editorLimit)+1))
 	if err != nil {
 		return nil, err
 	}
 	if len(data) > editorLimit || !utf8.Valid(data) || bytes.IndexByte(data, 0) >= 0 {
-		return nil, errors.New("файл не является текстом UTF-8 до 256 КиБ")
+		return nil, errors.New(tr("файл не является текстом UTF-8 до 256 КиБ"))
 	}
 	return data, nil
 }
@@ -83,10 +83,10 @@ func atomicFile(r *os.Root, rel string, data []byte, mode fs.FileMode) error {
 }
 func directoryPage(p profile, rel string) pageLoader {
 	return func(ctx context.Context) (panelPage, error) {
-		page := panelPage{title: "Файлы", description: filepath.ToSlash(rel)}
+		page := panelPage{title: tr("Файлы"), description: filepath.ToSlash(rel)}
 		page.rows = []panelRow{
-			{"+ Файл", "", newEntry(p, rel, false)}, {"+ Папка", "", newEntry(p, rel, true)},
-			{"Удалить запись…", "В этом каталоге", deleteEntry(p, rel)},
+			{tr("+ Файл"), "", newEntry(p, rel, false)}, {tr("+ Папка"), "", newEntry(p, rel, true)},
+			{tr("Удалить запись…"), tr("В этом каталоге"), deleteEntry(p, rel)},
 		}
 		err := inRoot(p.dir, func(r *os.Root) error {
 			entries, err := fs.ReadDir(r.FS(), filepath.ToSlash(rel))
@@ -99,7 +99,7 @@ func directoryPage(p profile, rel string) pageLoader {
 				}
 				path := filepath.Join(rel, e.Name())
 				if e.IsDir() {
-					page.rows = append(page.rows, panelRow{e.Name() + "/", "Папка", openPage(directoryPage(p, path))})
+					page.rows = append(page.rows, panelRow{e.Name() + "/", tr("Папка"), openPage(directoryPage(p, path))})
 					continue
 				}
 				info, err := e.Info()
@@ -120,25 +120,25 @@ func byteSize(n int64) string {
 	for _, unit := range []struct {
 		n int64
 		s string
-	}{{1 << 30, "ГиБ"}, {1 << 20, "МиБ"}, {1 << 10, "КиБ"}} {
+	}{{1 << 30, tr("ГиБ")}, {1 << 20, tr("МиБ")}, {1 << 10, tr("КиБ")}} {
 		if n >= unit.n {
 			return fmt.Sprintf("%.1f %s", float64(n)/float64(unit.n), unit.s)
 		}
 	}
-	return fmt.Sprintf("%d Б", n)
+	return fmt.Sprintf(tr("%d Б"), n)
 }
 func newEntry(p profile, dir string, folder bool) action {
 	return func(m *model) tea.Cmd {
-		return m.ask("Имя новой записи", "", false, func(name string) tea.Cmd {
+		return m.ask(tr("Имя новой записи"), "", false, func(name string) tea.Cmd {
 			if err := validName(name); err != nil {
 				m.report(err)
 				return nil
 			}
-			return m.change("Создание…", func(context.Context) error {
+			return m.change(tr("Создание…"), func(context.Context) error {
 				return inRoot(p.dir, func(r *os.Root) error {
 					path := filepath.Join(dir, name)
 					if protected(path) {
-						return errors.New("служебный файл Glumine")
+						return errors.New(tr("служебный файл Glumine"))
 					}
 					if folder {
 						return r.Mkdir(path, 0700)
@@ -158,18 +158,18 @@ func deleteEntry(p profile, dir string) action {
 		if !m.stopped(p) {
 			return nil
 		}
-		return m.ask("Имя файла или папки для удаления", "", false, func(name string) tea.Cmd {
+		return m.ask(tr("Имя файла или папки для удаления"), "", false, func(name string) tea.Cmd {
 			if err := validName(name); err != nil {
 				m.report(err)
 				return nil
 			}
 			path := filepath.Join(dir, name)
 			if protected(path) {
-				m.report(errors.New("служебный файл Glumine"))
+				m.report(errors.New(tr("служебный файл Glumine")))
 				return nil
 			}
-			return m.confirm("Удалить "+path+" со всем содержимым?", func(m *model) tea.Cmd {
-				return m.change("Удаление…", func(context.Context) error {
+			return m.confirm(tr("Удалить ")+path+tr(" со всем содержимым?"), func(m *model) tea.Cmd {
+				return m.change(tr("Удаление…"), func(context.Context) error {
 					return inRoot(p.dir, func(r *os.Root) error {
 						if _, err := r.Lstat(path); err != nil {
 							return err
@@ -256,11 +256,11 @@ func createArchive(ctx context.Context, p profile, s serverStore) error {
 func backupPage(p profile, s serverStore) pageLoader {
 	return func(context.Context) (panelPage, error) {
 		dir := backupDir(p, s)
-		page := panelPage{title: "Резервные копии", description: dir, rows: []panelRow{{"+ Создать ZIP", "Мир и настройки", func(m *model) tea.Cmd {
+		page := panelPage{title: tr("Резервные копии"), description: dir, rows: []panelRow{{tr("+ Создать ZIP"), tr("Мир и настройки"), func(m *model) tea.Cmd {
 			if !m.stopped(p) {
 				return nil
 			}
-			return m.change("Архивация…", func(ctx context.Context) error { return createArchive(ctx, p, s) })
+			return m.change(tr("Архивация…"), func(ctx context.Context) error { return createArchive(ctx, p, s) })
 		}}}}
 		entries, err := os.ReadDir(dir)
 		if errors.Is(err, os.ErrNotExist) {
@@ -306,7 +306,7 @@ func storagePage(p profile) pageLoader {
 				return nil
 			})
 		})
-		return panelPage{title: "Хранилище", description: p.dir, rows: []panelRow{{title: "Файлов", detail: fmt.Sprint(files)}, {title: "Занято", detail: byteSize(total)}}}, err
+		return panelPage{title: tr("Хранилище"), description: p.dir, rows: []panelRow{{title: tr("Файлов"), detail: fmt.Sprint(files)}, {title: tr("Занято"), detail: byteSize(total)}}}, err
 	}
 }
 
@@ -317,7 +317,7 @@ func saveEditedFile(p profile, rel string, original, updated []byte) error {
 			return err
 		}
 		if !bytes.Equal(original, current) {
-			return errors.New("файл изменился на диске, обновите страницу")
+			return errors.New(tr("файл изменился на диске, обновите страницу"))
 		}
 		if bytes.Equal(original, updated) {
 			return nil

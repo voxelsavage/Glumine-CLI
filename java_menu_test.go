@@ -26,7 +26,7 @@ func TestJavaChoiceInCompactForm(t *testing.T) {
 	m.Update(tea.WindowSizeMsg{Width: 36, Height: 13})
 	m.listKey("n")
 	body := m.creator()
-	if last := ansi.Strip(body[len(body)-1]); !strings.Contains(last, "Выбрать Java") {
+	if last := ansi.Strip(body[len(body)-1]); !strings.Contains(last, tr("Выбрать Java")) {
 		t.Fatal(last)
 	}
 	press := func(k tea.KeyType) { m.createKey(tea.KeyMsg{Type: k}) }

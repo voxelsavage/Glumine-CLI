@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/exec"
 	"path/filepath"
@@ -82,7 +83,7 @@ type model struct {
 func newModel(ctx context.Context, store serverStore, profiles []profile, java string) *model {
 	command := textinput.New()
 	command.Prompt = "› "
-	command.Placeholder = "Команда сервера…"
+	command.Placeholder = tr("Команда сервера…")
 	command.CharLimit = 512
 	return &model{
 		ctx: ctx, store: store, profiles: profiles, java: java,
@@ -111,7 +112,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case pasteReady:
 		if m.editor == msg.owner && m.editor.version == msg.version && m.editor.selection == msg.sel && m.editor.mode == "" && m.panel.done == nil {
 			if msg.err != nil {
-				m.editor.notice = "Буфер обмена недоступен · используйте вставку терминала"
+				m.editor.notice = tr("Буфер обмена недоступен · используйте вставку терминала")
 			} else if err := m.editor.insert(m.editor.pasteText(msg.text)); err != nil {
 				m.editor.notice = err.Error()
 			}
@@ -153,7 +154,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			if msg.err != nil {
 				m.report(msg.err)
 			} else if len(msg.options) == 0 {
-				m.report(fmt.Errorf("каталог пуст"))
+				m.report(errors.New(tr("каталог пуст")))
 			}
 		}
 	case refreshMsg:
@@ -176,7 +177,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			return strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name))
 		})
 		m.cursor = slices.IndexFunc(m.profiles, func(p profile) bool { return p.dir == msg.profile.dir })
-		m.screen, m.status = listScreen, "Сервер создан."
+		m.screen, m.status = listScreen, tr("Сервер создан.")
 	case javaResult:
 		canceled := m.javaCanceled
 		m.javaCanceled = false
@@ -187,7 +188,7 @@ func (m *model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		}
 		if canceled {
-			m.status = "Подготовка Java отменена."
+			m.status = tr("Подготовка Java отменена.")
 			return m, nil
 		}
 		if msg.err != nil {
@@ -243,10 +244,10 @@ func (m *model) handleKey(key tea.KeyMsg) tea.Cmd {
 		switch {
 		case m.installDone != nil:
 			m.cancelInstall()
-			m.status = "Отмена установки…"
+			m.status = tr("Отмена установки…")
 		case m.process != nil:
 			m.process.stop()
-			m.status = "Сохранение мира перед выходом…"
+			m.status = tr("Сохранение мира перед выходом…")
 		default:
 			return tea.Quit
 		}
@@ -276,7 +277,7 @@ func (m *model) listKey(key string) tea.Cmd {
 		return nil
 	case "t", "T", "е", "Е":
 		load := trashPage(m.store)
-		m.enterPanel(panelPage{title: "Корзина", load: load})
+		m.enterPanel(panelPage{title: tr("Корзина"), load: load})
 		return m.reload()
 	case "f2":
 		if m.cursor < len(m.profiles) {
@@ -287,7 +288,7 @@ func (m *model) listKey(key string) tea.Cmd {
 		if m.process != nil {
 			m.quitting = true
 			m.process.stop()
-			m.status = "Сохранение мира перед выходом…"
+			m.status = tr("Сохранение мира перед выходом…")
 			return nil
 		}
 		return tea.Quit
@@ -301,7 +302,7 @@ func (m *model) listKey(key string) tea.Cmd {
 		m.cursor = (m.cursor + 1) % (len(m.profiles) + 1)
 	case "n", "N", "т", "Т":
 		if m.process != nil {
-			m.report(fmt.Errorf("остановите активный сервер перед созданием профиля"))
+			m.report(errors.New(tr("остановите активный сервер перед созданием профиля")))
 			return nil
 		}
 		m.screen, m.field, m.offline = createScreen, 0, false
@@ -326,7 +327,7 @@ func (m *model) listKey(key string) tea.Cmd {
 			}
 			m.javaMode, m.javaPath = javaManual, path
 		}
-		m.fields[0].Placeholder = "Название мира"
+		m.fields[0].Placeholder = tr("Название мира")
 		return m.fields[0].Focus()
 	case "enter":
 		if m.cursor == len(m.profiles) {
@@ -334,7 +335,7 @@ func (m *model) listKey(key string) tea.Cmd {
 		}
 		selected := m.profiles[m.cursor]
 		if m.process != nil && m.owner != selected.dir {
-			m.report(fmt.Errorf("остановите активный сервер перед открытием другой консоли"))
+			m.report(errors.New(tr("остановите активный сервер перед открытием другой консоли")))
 			return nil
 		}
 		if m.owner != selected.dir {
@@ -352,7 +353,7 @@ func (m *model) createKey(key tea.KeyMsg) tea.Cmd {
 	if m.installDone != nil {
 		if key.String() == "esc" {
 			m.cancelInstall()
-			m.status = "Отмена установки…"
+			m.status = tr("Отмена установки…")
 		}
 		return nil
 	}
@@ -415,16 +416,16 @@ func (m *model) install() tea.Cmd {
 	memory, memoryErr := strconv.Atoi(strings.TrimSpace(m.fields[memoryField].Value()))
 	switch {
 	case p.Name == "" || p.Version == "":
-		m.report(fmt.Errorf("укажите имя сервера и версию Minecraft"))
+		m.report(errors.New(tr("укажите имя сервера и версию Minecraft")))
 	case portErr != nil || port < 1 || port > 65535:
-		m.report(fmt.Errorf("укажите порт от 1 до 65535"))
+		m.report(errors.New(tr("укажите порт от 1 до 65535")))
 	case memoryErr != nil || memory < 256 || memory > 65536:
-		m.report(fmt.Errorf("укажите память от 256 до 65536 МиБ"))
+		m.report(errors.New(tr("укажите память от 256 до 65536 МиБ")))
 	case p.Build == "":
-		m.report(fmt.Errorf("выберите сборку ядра"))
+		m.report(errors.New(tr("выберите сборку ядра")))
 	default:
 		p.Port, p.Memory = port, memory
-		m.status, m.failure = "Загрузка и проверка серверного JAR…", ""
+		m.status, m.failure = tr("Загрузка и проверка серверного JAR…"), ""
 		ctx, cancel := context.WithCancel(m.ctx)
 		result := make(chan installResult, 1)
 		done := make(chan struct{})
@@ -454,7 +455,7 @@ func (m *model) consoleKey(key tea.KeyMsg) tea.Cmd {
 		if m.cancelJava != nil {
 			m.javaCanceled = true
 			m.cancelJava()
-			m.status = "Отмена подготовки Java…"
+			m.status = tr("Отмена подготовки Java…")
 			return nil
 		}
 		if !m.starting && !m.restarting {
@@ -522,16 +523,16 @@ func (m *model) start() tea.Cmd {
 	}
 	m.clearConsole(p.dir)
 	m.starting = true
-	m.status, m.failure = fmt.Sprintf("Проверка Java %d…", p.Java), ""
+	m.status, m.failure = fmt.Sprintf(tr("Проверка Java %d…"), p.Java), ""
 	ctx, cancel := context.WithCancel(m.ctx)
 	m.cancelJava = cancel
 	java := m.java
 	cache := filepath.Join(filepath.Dir(m.store.root), "java")
 	if p.JavaMode == javaAuto {
-		m.status = fmt.Sprintf("Подготовка Java %d · автоматическая установка", p.Java)
+		m.status = fmt.Sprintf(tr("Подготовка Java %d · автоматическая установка"), p.Java)
 	}
 	if installerCore(p.Core) {
-		m.status = "Подготовка Java и установка " + p.Core + "…"
+		m.status = tr("Подготовка Java и установка ") + p.Core + "…"
 	}
 	done := make(chan struct{})
 	result := make(chan javaResult, 1)
@@ -568,9 +569,9 @@ func (m *model) refreshProcess() tea.Cmd {
 		m.logText = cleanTerminalText(raw)
 	}
 	if stopped {
-		m.exitMessage = "Сервер остановлен."
+		m.exitMessage = tr("Сервер остановлен.")
 		if m.process.err != nil {
-			m.exitMessage = "Сервер завершился: " + m.process.err.Error()
+			m.exitMessage = tr("Сервер завершился: ") + m.process.err.Error()
 		}
 		m.process = nil
 		m.command.Blur()
@@ -594,7 +595,7 @@ func (m *model) showLogs() {
 		content = strings.TrimSpace(content + "\n\n" + m.exitMessage)
 	}
 	if content == "" {
-		content = "Здесь появится журнал сервера."
+		content = tr("Здесь появится журнал сервера.")
 	}
 	if m.viewport.AtBottom() || m.viewport.TotalLineCount() <= 1 {
 		m.viewport.SetContent(content)

@@ -21,11 +21,11 @@ import (
 
 func databaseList(p profile) pageLoader {
 	return func(ctx context.Context) (panelPage, error) {
-		page := panelPage{title: "Базы данных", description: "SQLite · только чтение"}
-		page.rows = append(page.rows, panelRow{"Открыть по пути…", "Внешняя база", func(m *model) tea.Cmd {
-			return m.ask("Абсолютный путь к файлу SQLite", "", false, func(path string) tea.Cmd {
+		page := panelPage{title: tr("Базы данных"), description: tr("SQLite · только чтение")}
+		page.rows = append(page.rows, panelRow{tr("Открыть по пути…"), tr("Внешняя база"), func(m *model) tea.Cmd {
+			return m.ask(tr("Абсолютный путь к файлу SQLite"), "", false, func(path string) tea.Cmd {
 				if !filepath.IsAbs(path) {
-					m.report(errors.New("укажите абсолютный путь"))
+					m.report(errors.New(tr("укажите абсолютный путь")))
 					return nil
 				}
 				return openPage(tableList(path))(m)
@@ -59,7 +59,7 @@ func databaseList(p profile) pageLoader {
 					}
 					rel, err := filepath.Rel(base, actual)
 					if err != nil || !filepath.IsLocal(rel) {
-						return panelPage{}, errors.New("файл за пределами сервера")
+						return panelPage{}, errors.New(tr("файл за пределами сервера"))
 					}
 					return tableList(actual)(ctx)
 				})})
@@ -78,7 +78,7 @@ func queryReadOnly(ctx context.Context, path, statement string, consume func([]s
 	_, err = io.ReadFull(file, magic[:])
 	file.Close()
 	if err != nil || string(magic[:]) != "SQLite format 3\x00" {
-		return errors.New("выберите базу SQLite")
+		return errors.New(tr("выберите базу SQLite"))
 	}
 	name := filepath.ToSlash(path)
 	if !strings.HasPrefix(name, "/") {
@@ -129,28 +129,28 @@ func readonlySQL(s string) (string, error) {
 	s = strings.TrimSpace(strings.TrimSuffix(strings.TrimSpace(s), ";"))
 	words := strings.Fields(strings.ToLower(s))
 	if len(words) == 0 || (words[0] != "select" && words[0] != "with") || strings.ContainsAny(s, ";\x00") || strings.Contains(s, "--") || strings.Contains(s, "/*") {
-		return "", errors.New("разрешён один SELECT или WITH без комментариев")
+		return "", errors.New(tr("разрешён один SELECT или WITH без комментариев"))
 	}
 	tokens := strings.FieldsFunc(strings.ToLower(s), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '_' })
 	for _, token := range tokens {
 		switch token {
 		case "pragma", "attach", "detach", "vacuum", "insert", "update", "delete", "drop", "alter", "create", "replace", "reindex", "load_extension", "readfile", "writefile":
-			return "", fmt.Errorf("операция %s недоступна", token)
+			return "", fmt.Errorf(tr("операция %s недоступна"), token)
 		}
 	}
 	return s, nil
 }
 func tableList(path string) pageLoader {
 	return func(ctx context.Context) (panelPage, error) {
-		page := panelPage{title: filepath.Base(path), description: "Таблицы SQLite"}
-		page.rows = append(page.rows, panelRow{"Запрос SELECT…", "Только чтение", func(m *model) tea.Cmd {
-			return m.ask("SQL-запрос", "SELECT ", false, func(input string) tea.Cmd {
+		page := panelPage{title: filepath.Base(path), description: tr("Таблицы SQLite")}
+		page.rows = append(page.rows, panelRow{tr("Запрос SELECT…"), tr("Только чтение"), func(m *model) tea.Cmd {
+			return m.ask(tr("SQL-запрос"), "SELECT ", false, func(input string) tea.Cmd {
 				q, err := readonlySQL(input)
 				if err != nil {
 					m.report(err)
 					return nil
 				}
-				return openPage(queryPage(path, "Результаты", q, 0))(m)
+				return openPage(queryPage(path, tr("Результаты"), q, 0))(m)
 			})
 		}})
 		err := queryReadOnly(ctx, path, "SELECT name FROM sqlite_schema WHERE type='table' ORDER BY name LIMIT 5000", func(_ []string, v []any) error {
@@ -164,10 +164,10 @@ func tableList(path string) pageLoader {
 }
 func queryPage(path, title, q string, offset int) pageLoader {
 	return func(ctx context.Context) (panelPage, error) {
-		page := panelPage{title: title, description: fmt.Sprintf("Строки с %d · Enter для просмотра полей", offset+1)}
+		page := panelPage{title: title, description: fmt.Sprintf(tr("Строки с %d · Enter для просмотра полей"), offset+1)}
 		err := queryReadOnly(ctx, path, fmt.Sprintf("SELECT * FROM (%s) LIMIT 101 OFFSET %d", q, offset), func(cols []string, v []any) error {
 			if len(page.rows) == 100 {
-				page.rows = append(page.rows, panelRow{"Следующие 100 строк", "→", openPage(queryPage(path, title, q, offset+100))})
+				page.rows = append(page.rows, panelRow{tr("Следующие 100 строк"), "→", openPage(queryPage(path, title, q, offset+100))})
 				return nil
 			}
 			fields := make([]panelRow, len(cols))
@@ -186,7 +186,7 @@ func queryPage(path, title, q string, offset int) pageLoader {
 				fields[i] = panelRow{title: cols[i] + "   " + values[i]}
 			}
 			page.rows = append(page.rows, panelRow{title: strings.Join(values, "  │  "), open: openPage(func(context.Context) (panelPage, error) {
-				return panelPage{title: title, description: "Поля записи", rows: fields}, nil
+				return panelPage{title: title, description: tr("Поля записи"), rows: fields}, nil
 			})})
 			return nil
 		})

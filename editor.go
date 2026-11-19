@@ -39,7 +39,7 @@ type pasteReady struct {
 func openCode(p profile, rel string) action {
 	return func(m *model) tea.Cmd {
 		var raw []byte
-		return m.schedule("Чтение файла…", func(context.Context) (panelPage, error) {
+		return m.schedule(tr("Чтение файла…"), func(context.Context) (panelPage, error) {
 			err := inRoot(p.dir, func(r *os.Root) error { var err error; raw, err = smallFile(r, rel); return err })
 			return panelPage{}, err
 		}, func(panelPage) tea.Cmd {
@@ -70,17 +70,17 @@ func (m *model) leaveCode() tea.Cmd {
 func (m *model) saveCode(closeAfter bool) tea.Cmd {
 	e := m.editor
 	if e.readonly {
-		e.notice = "Файл открыт для чтения"
+		e.notice = tr("Файл открыт для чтения")
 		return nil
 	}
 	before, after := []byte(e.bom+e.saved), []byte(e.bom+e.text)
 	e.mode = ""
-	return m.schedule("Сохранение…", func(context.Context) (panelPage, error) {
+	return m.schedule(tr("Сохранение…"), func(context.Context) (panelPage, error) {
 		return panelPage{}, saveEditedFile(e.profile, e.path, before, after)
 	}, func(panelPage) tea.Cmd {
 		e.saved = e.text
 		e.mode = ""
-		e.notice = "Сохранено в " + time.Now().Format("15:04")
+		e.notice = tr("Сохранено в ") + time.Now().Format("15:04")
 		if closeAfter {
 			return m.leaveCode()
 		}
@@ -99,9 +99,9 @@ func (e *codeEditor) prompt(mode, value string) tea.Cmd {
 }
 func (e *codeEditor) search(back bool) {
 	if !e.find(e.query, back) {
-		e.notice = "Совпадений нет"
+		e.notice = tr("Совпадений нет")
 	} else {
-		e.notice = "F3 — следующее совпадение"
+		e.notice = tr("F3 — следующее совпадение")
 	}
 }
 func (e *codeEditor) submitPrompt() tea.Cmd {
@@ -110,20 +110,20 @@ func (e *codeEditor) submitPrompt() tea.Cmd {
 	case "goto":
 		n, err := strconv.Atoi(strings.TrimSpace(value))
 		if err != nil || n < 1 || n > len(e.lines) {
-			e.notice = fmt.Sprintf("Введите номер от 1 до %d", len(e.lines))
+			e.notice = fmt.Sprintf(tr("Введите номер от 1 до %d"), len(e.lines))
 			return nil
 		}
 		e.move(e.lines[n-1], false)
 		e.preferred = -1
 	case "search", "needle":
 		if value == "" {
-			e.notice = "Введите текст"
+			e.notice = tr("Введите текст")
 			return nil
 		}
 		e.query = value
 		a, b := e.bounds()
 		if e.part(a, b) != value && !e.find(value, false) {
-			e.notice = "Совпадений нет"
+			e.notice = tr("Совпадений нет")
 			return nil
 		}
 		if e.mode == "needle" {
@@ -137,7 +137,7 @@ func (e *codeEditor) submitPrompt() tea.Cmd {
 				return nil
 			}
 		}
-		e.notice = "Совпадение заменено"
+		e.notice = tr("Совпадение заменено")
 	}
 	e.mode = ""
 	return nil
@@ -209,7 +209,7 @@ func (m *model) editorKey(k tea.KeyMsg) tea.Cmd {
 	if e.mode == "help" {
 		switch key {
 		case "down", "pgdown":
-			e.helpTop = min(max(0, len(editorHelp)-max(1, m.height-5)), e.helpTop+1)
+			e.helpTop = min(max(0, len(editorHelp())-max(1, m.height-5)), e.helpTop+1)
 		case "up", "pgup":
 			e.helpTop = max(0, e.helpTop-1)
 		default:
@@ -271,7 +271,7 @@ func (m *model) editorKey(k tea.KeyMsg) tea.Cmd {
 		}
 		if key == "ctrl+r" {
 			if e.readonly {
-				e.notice = "Файл открыт для чтения"
+				e.notice = tr("Файл открыт для чтения")
 				return nil
 			}
 			return e.prompt("needle", query)
@@ -287,7 +287,7 @@ func (m *model) editorKey(k tea.KeyMsg) tea.Cmd {
 		return nil
 	case "f4":
 		if e.syntax.version != e.version || e.syntax.owner != e {
-			e.notice = "Структура обновляется…"
+			e.notice = tr("Структура обновляется…")
 			return e.highlight()
 		}
 		e.mode = "outline"
@@ -298,7 +298,7 @@ func (m *model) editorKey(k tea.KeyMsg) tea.Cmd {
 		return nil
 	case "ctrl+c", "ctrl+x":
 		if a == b {
-			e.notice = "Выделите текст с Shift"
+			e.notice = tr("Выделите текст с Shift")
 			return nil
 		}
 		m.editorClip = e.part(a, b)
@@ -306,7 +306,7 @@ func (m *model) editorKey(k tea.KeyMsg) tea.Cmd {
 			_ = e.replace(a, b, "")
 		}
 		text := m.editorClip
-		e.notice = "Скопировано"
+		e.notice = tr("Скопировано")
 		return func() tea.Msg { _ = clipboard.WriteAll(text); return nil }
 	}
 	extend := strings.Contains(key, "shift+")
@@ -354,7 +354,7 @@ func (m *model) editorKey(k tea.KeyMsg) tea.Cmd {
 		return nil
 	}
 	if e.readonly {
-		e.notice = "Файл открыт для чтения"
+		e.notice = tr("Файл открыт для чтения")
 		return nil
 	}
 	var err error

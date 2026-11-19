@@ -90,7 +90,7 @@ func mavenArtifact(ctx context.Context, link string) (artifact, error) {
 	}
 	words := strings.Fields(string(b))
 	if len(words) == 0 || len(words[0]) != 40 {
-		return artifact{}, errors.New("контрольная сумма установщика недоступна")
+		return artifact{}, errors.New(tr("контрольная сумма установщика недоступна"))
 	}
 	return artifact{URL: link, SHA1: words[0]}, nil
 }
@@ -108,7 +108,7 @@ func serverArgs(p profile) ([]string, error) {
 			return nil, err
 		}
 		if !info.Mode().IsRegular() {
-			return nil, errors.New("не найден Quilt launcher")
+			return nil, errors.New(tr("не найден Quilt launcher"))
 		}
 		return []string{"-jar", launcher, "nogui"}, nil
 	}
@@ -130,7 +130,7 @@ func serverArgs(p profile) ([]string, error) {
 			return []string{"-jar", name, "nogui"}, nil
 		}
 	}
-	return nil, errors.New("установщик не создал файлы запуска ядра")
+	return nil, errors.New(tr("установщик не создал файлы запуска ядра"))
 }
 func prepareCore(ctx context.Context, p profile, java string) error {
 	if !installerCore(p.Core) {
@@ -164,7 +164,7 @@ func prepareCore(ctx context.Context, p profile, java string) error {
 	if err := cmd.Run(); err != nil {
 		output, _ := log.snapshot(0)
 		lines := strings.Split(strings.TrimSpace(cleanTerminalText(output)), "\n")
-		return fmt.Errorf("установка %s: %w · %s", p.Core, err, lines[len(lines)-1])
+		return fmt.Errorf(tr("установка %s: %w · %s"), p.Core, err, lines[len(lines)-1])
 	}
 	if _, err := serverArgs(p); err != nil {
 		return err

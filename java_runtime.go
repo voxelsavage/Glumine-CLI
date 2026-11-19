@@ -35,7 +35,7 @@ func javaPackage(ctx context.Context, major int) (string, string, int64, error) 
 		system = "mac"
 	}
 	if arch == "" {
-		return "", "", 0, fmt.Errorf("нет автоматической установки для %s", runtime.GOARCH)
+		return "", "", 0, fmt.Errorf(tr("нет автоматической установки для %s"), runtime.GOARCH)
 	}
 	for _, kind := range []string{"jre", "jdk"} {
 		params := url.Values{"architecture": {arch}, "os": {system}, "image_type": {kind}, "vendor": {"eclipse"}}
@@ -56,11 +56,11 @@ func javaPackage(ctx context.Context, major int) (string, string, int64, error) 
 		}
 		p := assets[0].Binary.Package
 		if !strings.HasPrefix(p.Link, "https://") || len(p.Checksum) != 64 || p.Size <= 0 {
-			return "", "", 0, errors.New("некорректные данные пакета Java")
+			return "", "", 0, errors.New(tr("некорректные данные пакета Java"))
 		}
 		return p.Link, p.Checksum, p.Size, nil
 	}
-	return "", "", 0, fmt.Errorf("Temurin Java %d недоступна для %s/%s", major, system, arch)
+	return "", "", 0, fmt.Errorf(tr("Temurin Java %d недоступна для %s/%s"), major, system, arch)
 }
 
 func installedJava(dir string) (string, error) {
@@ -103,12 +103,12 @@ func downloadRuntime(ctx context.Context, dir string, major int) error {
 		return err
 	}
 	if n != size || !strings.EqualFold(hex.EncodeToString(digest.Sum(nil)), sum) {
-		return errors.New("пакет Java не прошёл проверку SHA-256")
+		return errors.New(tr("пакет Java не прошёл проверку SHA-256"))
 	}
 	// Both BSD tar (Windows/macOS) and GNU tar (Linux) auto-detect their
 	// platform's Temurin archive format when reading from a file.
 	if out, err := exec.CommandContext(ctx, "tar", "-xf", archive, "-C", dir).CombinedOutput(); err != nil {
-		return fmt.Errorf("распаковка Java: %w %s", err, strings.TrimSpace(string(out)))
+		return fmt.Errorf(tr("распаковка Java: %w %s"), err, strings.TrimSpace(string(out)))
 	}
 	return os.Remove(archive)
 }
@@ -119,12 +119,12 @@ func resolveJava(ctx context.Context, p profile, override, cache string) (string
 		return findJava(ctx, override, p.Java)
 	case javaManual:
 		if p.JavaPath == "" {
-			return "", errors.New("не указан путь к Java")
+			return "", errors.New(tr("не указан путь к Java"))
 		}
 		return findJava(ctx, p.JavaPath, p.Java)
 	case javaAuto:
 	default:
-		return "", fmt.Errorf("неизвестный режим Java %q", p.JavaMode)
+		return "", fmt.Errorf(tr("неизвестный режим Java %q"), p.JavaMode)
 	}
 	if err := os.MkdirAll(cache, 0700); err != nil {
 		return "", err
@@ -145,7 +145,7 @@ func resolveJava(ctx context.Context, p profile, override, cache string) (string
 	}
 	path, err := installedJava(staging)
 	if err != nil {
-		return "", fmt.Errorf("в архиве отсутствует bin/%s", javaFilename())
+		return "", fmt.Errorf(tr("в архиве отсутствует bin/%s"), javaFilename())
 	}
 	if _, err = findJava(ctx, path, p.Java); err != nil {
 		return "", err

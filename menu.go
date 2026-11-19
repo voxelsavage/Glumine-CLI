@@ -28,7 +28,9 @@ const (
 	formCount
 )
 
-var fieldNames = [formCount]string{"Название", "Версия Minecraft", "Ядро", "Сборка ядра", "Пиратский режим", "Порт", "Память, МиБ", "Создать сервер", "Выбрать Java"}
+func fieldNames() [formCount]string {
+	return [formCount]string{tr("Название"), tr("Версия Minecraft"), tr("Ядро"), tr("Сборка ядра"), tr("Пиратский режим"), tr("Порт"), tr("Память, МиБ"), tr("Создать сервер"), tr("Выбрать Java")}
+}
 
 func editable(field int) bool {
 	return field == nameField || field == portField || field == memoryField
@@ -82,14 +84,14 @@ func catalog(ctx context.Context, field int, version, core string) ([]string, er
 		slices.Reverse(catalog.Builds.All)
 		return catalog.Builds.All, nil
 	}
-	return nil, errors.New("неизвестный каталог")
+	return nil, errors.New(tr("неизвестный каталог"))
 }
 
 func (m *model) openPicker() tea.Cmd {
 	field := m.field
 	version, core := m.fields[versionField].Value(), m.fields[coreField].Value()
 	if field != versionField && version == "" {
-		m.report(errors.New("сначала выберите версию Minecraft"))
+		m.report(errors.New(tr("сначала выберите версию Minecraft")))
 		return nil
 	}
 	ctx, cancel := context.WithTimeout(m.ctx, 20*time.Second)

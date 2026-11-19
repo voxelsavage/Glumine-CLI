@@ -154,10 +154,10 @@ func (d *document) splice(at, n int, s string) {
 func (d *document) replace(a, b int, s string) error {
 	old := d.part(a, b)
 	if len(d.bom)+len(d.text)-len(old)+len(s) > editorLimit {
-		return errors.New("лимит файла — 256 КиБ")
+		return errors.New(tr("лимит файла — 256 КиБ"))
 	}
 	if !utf8.ValidString(s) || strings.IndexByte(s, 0) >= 0 {
-		return errors.New("нужен текст UTF-8 без нулевых байтов")
+		return errors.New(tr("нужен текст UTF-8 без нулевых байтов"))
 	}
 	at := d.glyphs[a].offset
 	before := d.bytesSelection()

@@ -24,7 +24,7 @@ func (m *model) openJava() {
 	input.Prompt = "› "
 	input.CharLimit = 4096
 	input.Width = max(8, m.formWidth()-5)
-	input.Placeholder = "Путь к Java или папке JDK"
+	input.Placeholder = tr("Путь к Java или папке JDK")
 	input.SetValue(m.javaPath)
 	m.javaMenu = &javaDialog{manual: m.javaMode == javaManual, path: input, row: -1}
 	m.failure = ""
@@ -56,7 +56,7 @@ func (d *javaDialog) list(dir string) error {
 func manualJavaPath(input, base string) (string, error) {
 	s := strings.TrimSpace(input)
 	if s == "" {
-		return "", errors.New("укажите путь к Java")
+		return "", errors.New(tr("укажите путь к Java"))
 	}
 	if s == "~" || strings.HasPrefix(s, "~/") || strings.HasPrefix(s, `~\`) {
 		home, err := os.UserHomeDir()
@@ -162,7 +162,7 @@ func (m *model) javaKey(key tea.KeyMsg) tea.Cmd {
 			}
 		}
 		if !info.Mode().IsRegular() || runtime.GOOS != "windows" && info.Mode().Perm()&0111 == 0 {
-			m.report(errors.New("выберите исполняемый файл Java"))
+			m.report(errors.New(tr("выберите исполняемый файл Java")))
 			return nil
 		}
 		m.javaMode, m.javaPath = javaManual, path
@@ -182,9 +182,9 @@ func (m *model) javaKey(key tea.KeyMsg) tea.Cmd {
 func (m *model) javaPage() int { return max(1, m.bodyHeight()-5) }
 func (m *model) javaView(w int) []string {
 	d := m.javaMenu
-	rows := []string{heading("Выбрать Java"), ""}
+	rows := []string{heading(tr("Выбрать Java")), ""}
 	if !d.browse {
-		for i, name := range []string{"Скачать автоматически", "Выбрать путь к Java"} {
+		for i, name := range []string{tr("Скачать автоматически"), tr("Выбрать путь к Java")} {
 			bg, mark := panel, "  "
 			if (i == 1) == d.manual {
 				bg, mark = "#234C83", tint("▌ ", "#A8D5FF", true)

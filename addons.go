@@ -36,17 +36,17 @@ func addonTarget(p profile) (string, []string) {
 func addonPage(p profile) pageLoader {
 	return func(context.Context) (panelPage, error) {
 		dir, loaders := addonTarget(p)
-		page := panelPage{title: "Дополнения", description: "Modrinth · " + p.edition()}
+		page := panelPage{title: tr("Дополнения"), description: "Modrinth · " + p.edition()}
 		if len(loaders) == 0 {
-			page.description = "Для дополнений выберите ядро с поддержкой плагинов или модов"
+			page.description = tr("Для дополнений выберите ядро с поддержкой плагинов или модов")
 			return page, nil
 		}
-		page.rows = append(page.rows, panelRow{"Поиск на Modrinth", "По версии и ядру", func(m *model) tea.Cmd {
-			return m.ask("Название дополнения", "", false, func(text string) tea.Cmd { return openPage(addonSearch(p, text))(m) })
+		page.rows = append(page.rows, panelRow{tr("Поиск на Modrinth"), tr("По версии и ядру"), func(m *model) tea.Cmd {
+			return m.ask(tr("Название дополнения"), "", false, func(text string) tea.Cmd { return openPage(addonSearch(p, text))(m) })
 		}})
 		if dir == "plugins" {
-			page.rows = append(page.rows, panelRow{"Поиск на Hangar", "Плагины Paper", func(m *model) tea.Cmd {
-				return m.ask("Название плагина", "", false, func(text string) tea.Cmd { return openPage(hangarSearch(p, text))(m) })
+			page.rows = append(page.rows, panelRow{tr("Поиск на Hangar"), tr("Плагины Paper"), func(m *model) tea.Cmd {
+				return m.ask(tr("Название плагина"), "", false, func(text string) tea.Cmd { return openPage(hangarSearch(p, text))(m) })
 			}})
 		}
 		err := inRoot(p.dir, func(r *os.Root) error {
@@ -63,9 +63,9 @@ func addonPage(p profile) pageLoader {
 				}
 				name := e.Name()
 				to := name + ".disabled"
-				state := "Включено"
+				state := tr("Включено")
 				if strings.HasSuffix(name, ".jar.disabled") {
-					state = "Отключено"
+					state = tr("Отключено")
 					to = strings.TrimSuffix(name, ".disabled")
 				} else if !strings.HasSuffix(name, ".jar") {
 					continue
@@ -74,8 +74,8 @@ func addonPage(p profile) pageLoader {
 					if !m.stopped(p) {
 						return nil
 					}
-					return m.confirm("Переименовать "+name+" в "+to+"?", func(m *model) tea.Cmd {
-						return m.change("Обновление…", func(context.Context) error {
+					return m.confirm(tr("Переименовать ")+name+tr(" в ")+to+"?", func(m *model) tea.Cmd {
+						return m.change(tr("Обновление…"), func(context.Context) error {
 							return inRoot(p.dir, func(r *os.Root) error {
 								target := filepath.Join(dir, to)
 								if _, err := r.Lstat(target); err == nil {
@@ -110,7 +110,7 @@ func addonSearch(p profile, text string) pageLoader {
 			}
 		}
 		err := fetchJSON(ctx, modrinthAPI+"/search?"+args.Encode(), &result)
-		page := panelPage{title: "Каталог Modrinth", description: text + " · " + p.edition()}
+		page := panelPage{title: tr("Каталог Modrinth"), description: text + " · " + p.edition()}
 		for _, hit := range result.Hits {
 			page.rows = append(page.rows, panelRow{hit.Title, hit.Author, openPage(addonVersions(p, hit.Project, hit.Title))})
 		}
@@ -138,7 +138,7 @@ func addonVersions(p profile, id, title string) pageLoader {
 			}
 		}
 		err := fetchJSON(ctx, modrinthAPI+"/project/"+url.PathEscape(id)+"/version?"+args.Encode(), &versions)
-		page := panelPage{title: title, description: "Выберите совместимую версию для установки"}
+		page := panelPage{title: title, description: tr("Выберите совместимую версию для установки")}
 		for _, v := range versions {
 			var file addonFile
 			for _, f := range v.Files {
@@ -155,16 +155,16 @@ func addonVersions(p profile, id, title string) pageLoader {
 					required++
 				}
 			}
-			message := "Установить " + file.Filename + "?"
+			message := tr("Установить ") + file.Filename + "?"
 			if required > 0 {
-				message += fmt.Sprintf(" Требуемые зависимости (%d) устанавливаются отдельно.", required)
+				message += fmt.Sprintf(tr(" Требуемые зависимости (%d) устанавливаются отдельно."), required)
 			}
 			page.rows = append(page.rows, panelRow{v.Name, byteSize(file.Size), func(m *model) tea.Cmd {
 				if !m.stopped(p) {
 					return nil
 				}
 				return m.confirm(message, func(m *model) tea.Cmd {
-					return m.change("Загрузка дополнения…", func(ctx context.Context) error { return installAddon(ctx, p, file) })
+					return m.change(tr("Загрузка дополнения…"), func(ctx context.Context) error { return installAddon(ctx, p, file) })
 				})
 			}})
 		}
@@ -186,7 +186,7 @@ func installAddon(ctx context.Context, p profile, f addonFile) error {
 		}
 	}
 	if dir == "" || validName(f.Filename) != nil || !strings.HasSuffix(strings.ToLower(f.Filename), ".jar") || link == nil || err != nil || link.Scheme != "https" || link.Host != allowedHost || len(expected) != digest.Size()*2 || f.Size <= 0 || f.Size > 512<<20 {
-		return errors.New("некорректные метаданные дополнения")
+		return errors.New(tr("некорректные метаданные дополнения"))
 	}
 	return inRoot(p.dir, func(r *os.Root) error {
 		if err := r.MkdirAll(dir, 0700); err != nil {
@@ -195,7 +195,7 @@ func installAddon(ctx context.Context, p profile, f addonFile) error {
 		dest := filepath.Join(dir, f.Filename)
 		for _, name := range []string{dest, dest + ".disabled"} {
 			if _, err := r.Lstat(name); err == nil {
-				return errors.New("эта версия уже установлена")
+				return errors.New(tr("эта версия уже установлена"))
 			} else if !errors.Is(err, os.ErrNotExist) {
 				return err
 			}
@@ -217,7 +217,7 @@ func installAddon(ctx context.Context, p profile, f addonFile) error {
 			return err
 		}
 		if n != f.Size || !strings.EqualFold(hex.EncodeToString(digest.Sum(nil)), expected) {
-			return errors.New("JAR не прошёл проверку контрольной суммы")
+			return errors.New(tr("JAR не прошёл проверку контрольной суммы"))
 		}
 		return r.Rename(tmp, dest)
 	})
@@ -235,7 +235,7 @@ func hangarSearch(p profile, text string) pageLoader {
 			}
 		}
 		err := fetchJSON(ctx, hangarAPI+"?"+q.Encode(), &result)
-		page := panelPage{title: "Каталог Hangar", description: text + " · " + p.edition()}
+		page := panelPage{title: tr("Каталог Hangar"), description: text + " · " + p.edition()}
 		for _, h := range result.Result {
 			page.rows = append(page.rows, panelRow{h.Name, h.Namespace.Owner, openPage(hangarVersions(p, h.Namespace.Slug))})
 		}
@@ -259,7 +259,7 @@ func hangarVersions(p profile, slug string) pageLoader {
 			}
 		}
 		err := fetchJSON(ctx, hangarAPI+"/"+url.PathEscape(slug)+"/versions?"+q.Encode(), &result)
-		page := panelPage{title: slug, description: "Совместимые версии Hangar"}
+		page := panelPage{title: slug, description: tr("Совместимые версии Hangar")}
 		for _, v := range result.Result {
 			d := v.Downloads["PAPER"]
 			if d.DownloadURL == "" || d.FileInfo.Sha256Hash == "" {
@@ -271,8 +271,8 @@ func hangarVersions(p profile, slug string) pageLoader {
 				if !m.stopped(p) {
 					return nil
 				}
-				return m.confirm("Установить "+file.Filename+"?", func(m *model) tea.Cmd {
-					return m.change("Загрузка с Hangar…", func(ctx context.Context) error { return installAddon(ctx, p, file) })
+				return m.confirm(tr("Установить ")+file.Filename+"?", func(m *model) tea.Cmd {
+					return m.change(tr("Загрузка с Hangar…"), func(ctx context.Context) error { return installAddon(ctx, p, file) })
 				})
 			}})
 		}

@@ -63,8 +63,8 @@ func TestPanelEditBackupTrashRestore(t *testing.T) {
 		}
 		run(m.panel.prompt.submit(value))
 	}
-	open("Файлы")
-	open("+ Файл")
+	open(tr("Файлы"))
+	open(tr("+ Файл"))
 	submit("notes.txt")
 	open("notes.txt")
 	run(m.handleKey(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("первая строка\nвторая\n"), Paste: true}))
@@ -75,8 +75,8 @@ func TestPanelEditBackupTrashRestore(t *testing.T) {
 	}
 	run(m.handleKey(tea.KeyMsg{Type: tea.KeyEsc}))
 	back()
-	open("Резервные копии")
-	open("+ Создать ZIP")
+	open(tr("Резервные копии"))
+	open(tr("+ Создать ZIP"))
 	archives, _ := filepath.Glob(filepath.Join(backupDir(p, m.store), "*.zip"))
 	if len(archives) != 1 {
 		t.Fatal(archives)
@@ -90,20 +90,20 @@ func TestPanelEditBackupTrashRestore(t *testing.T) {
 		t.Fatal(err)
 	}
 	back()
-	open("Настройки")
-	open("Максимум памяти")
+	open(tr("Настройки"))
+	open(tr("Максимум памяти"))
 	submit("3072")
 	if m.profiles[0].Memory != 3072 {
 		t.Fatal("RAM not persisted")
 	}
-	open("В корзину")
+	open(tr("В корзину"))
 	submit("")
 	if len(m.profiles) != 0 || m.screen != listScreen {
 		t.Fatal("trash")
 	}
 	run(m.listKey("t"))
 	open(p.Name)
-	open("Восстановить сервер")
+	open(tr("Восстановить сервер"))
 	if len(m.profiles) != 1 {
 		t.Fatal("restore")
 	}

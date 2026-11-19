@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	initializeLocale()
 	if err := run(); err != nil {
 		fmt.Fprintln(os.Stderr, "Glumine CLI:", err)
 		os.Exit(1)
@@ -20,17 +21,17 @@ func main() {
 }
 
 func run() error {
-	dataDir := flag.String("data-dir", "", "directory for CLI server data")
-	java := flag.String("java", "", "path to the Java executable")
+	dataDir := flag.String("data-dir", "", tr("каталог данных Glumine CLI"))
+	java := flag.String("java", "", tr("путь к исполняемому файлу Java"))
 	flag.Parse()
 	if flag.NArg() != 0 {
-		return errors.New("unexpected arguments (use -help)")
+		return errors.New(tr("лишние аргументы (см. -help)"))
 	}
 
 	if *dataDir == "" {
 		configDir, err := os.UserConfigDir()
 		if err != nil {
-			return fmt.Errorf("find user configuration directory: %w", err)
+			return fmt.Errorf(tr("поиск каталога конфигурации: %w"), err)
 		}
 		*dataDir = filepath.Join(configDir, "Glumine-CLI")
 	}
@@ -45,10 +46,10 @@ func run() error {
 	lock := flock.New(filepath.Join(root, "glumine.lock"))
 	acquired, err := lock.TryLock()
 	if err != nil {
-		return fmt.Errorf("lock data directory: %w", err)
+		return fmt.Errorf(tr("блокировка каталога данных: %w"), err)
 	}
 	if !acquired {
-		return errors.New("another Glumine CLI instance is using this data directory")
+		return errors.New(tr("другой экземпляр Glumine CLI использует этот каталог данных"))
 	}
 	defer lock.Close()
 

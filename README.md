@@ -1,10 +1,10 @@
 # Glumine CLI
 
-Терминальный менеджер локальных Minecraft Java Edition серверов на Go и Bubble Tea. Поддерживает Vanilla, Paper, Purpur, Fabric, Quilt, Forge и NeoForge. Панель управления открывается клавишей **F2** из библиотеки или консоли.
+Create and manage local Minecraft Java Edition servers from your terminal. Glumine CLI is a standalone Go application built with Bubble Tea. It supports Vanilla, Paper, Purpur, Fabric, Quilt, Forge, and NeoForge.
 
-## Быстрый старт
+## Quick start
 
-Для запуска из исходников установите Go 1.25 или новее. CLI обращается к интернету для получения каталогов и загрузки выбранного ядра. Java можно выбрать или скачать при настройке сервера.
+With Go 1.25 or later installed, run:
 
 ```sh
 git clone https://github.com/voxelsavage/Glumine-CLI.git
@@ -12,76 +12,66 @@ cd Glumine-CLI
 go run .
 ```
 
-В библиотеке нажмите **N**, чтобы создать первый сервер. Для существующего сервера **Enter** открывает консоль, а **F2** — панель управления.
+1. Press **N** in the library and give your server a name. Choose a Minecraft release, server type, and build from the menus. For Vanilla, the build matches the game release.
+2. Set the port and maximum memory. Minecraft account verification is enabled by default. Turn on **Offline mode** if you want to allow players to join without account verification.
+3. Select **Choose Java** to use an existing runtime or download one automatically. Then select **Create server** to download the server package.
+4. Open the new profile and press **Enter** to start it. On first start, review the Minecraft EULA and choose whether to accept. Glumine stores that choice for this server.
 
-## Сборка
+The interface uses Russian for Russian locales and English otherwise. At startup it checks `LC_ALL`, then `LC_MESSAGES`, then `LANG`. When those variables are unset, Windows and macOS use the system language preference. For example, on Linux you can run `LC_ALL=C ./glumine-cli` for English.
 
-**Linux**
+## Build
 
-```sh
-go build -o glumine-cli .
-./glumine-cli
-```
+| Platform | Build | Run |
+| --- | --- | --- |
+| Linux | `go build -o glumine-cli .` | `./glumine-cli` |
+| Windows PowerShell | `go build -o Glumine-CLI.exe .` | `.\Glumine-CLI.exe` |
 
-**Windows (PowerShell)**
+GitHub Actions tests and builds the CLI on Linux x64 and Windows x64. Open a successful run and download the binary from **Artifacts**. [Build workflow](https://github.com/voxelsavage/Glumine-CLI/actions/workflows/build.yml)
 
-```powershell
-go build -o Glumine-CLI.exe .
-.\Glumine-CLI.exe
-```
+## Java and server installation
 
-GitHub Actions проверяет код и собирает программу для Linux x64 и Windows x64. После успешного запуска готовые бинарники доступны в разделе **Artifacts**. [Сборки Glumine CLI](https://github.com/voxelsavage/Glumine-CLI/actions/workflows/build.yml)
+**Download automatically** is the default for new profiles. On first start after EULA acceptance, Glumine downloads a compatible Eclipse Temurin runtime, verifies its SHA-256 checksum, and extracts it using the system `tar` utility. Profiles that need the same runtime share the cached installation.
 
-## Выбор Java
+**Choose Java path** lets you enter a path or browse to a JDK directory, `java`, or `java.exe`. Glumine checks the Java version when creating the profile. The `-java` flag preselects a runtime in the creation form. Older profiles without a Java preference check the flag, then `JAVA_HOME`, then `PATH`.
 
-Внизу формы создания находится синяя кнопка **Выбрать Java**. Стрелками выберите один из двух режимов и нажмите **Enter**.
+An internet connection is needed for version catalogs and downloads. Forge, NeoForge, and Quilt prepare their libraries on first start. The Quilt installer may need an additional Java 17 runtime for older Minecraft versions.
 
-- **Скачать автоматически** — при первом запуске после принятия EULA CLI скачивает совместимый Eclipse Temurin, проверяет SHA-256 и распаковывает его системной утилитой `tar`. Установленная версия хранится в каталоге данных CLI в папке `java` и используется другими серверами с теми же требованиями.
-- **Выбрать путь к Java** — введите путь или перейдите стрелками к файлу `java` или `java.exe`. Можно выбрать и каталог JDK. При создании CLI проверит совместимость Java и сохранит путь для этого профиля.
+## Library and dashboard
 
-Для нового профиля по умолчанию выбрана автоматическая установка. Если CLI запущен с `-java`, указанный путь подставляется в форму. Старые профили используют прежний порядок поиска через `-java`, `JAVA_HOME` и `PATH`.
+In the library, **Enter** opens the selected server's console, **F2** opens its dashboard, **T** opens the trash, and **R** reloads profiles from disk. If a profile cannot be read, the library shows its folder name. Fix its `profile.json` and press **R** to reload it.
 
-## Управление
-
-- Выберите **+ Создать сервер** в библиотеке или нажмите **N**. Введите название. На строках версии Minecraft, ядра и сборки нажмите **Enter**, выберите вариант стрелками и подтвердите **Enter**. **PgUp/PgDn** листают длинные списки. Для Vanilla сборка совпадает с релизом Minecraft, для остальных ядер выбирают сборку или версию загрузчика. Forge, NeoForge и Quilt подготавливают библиотеки при первом запуске. Для старого Minecraft установщику Quilt может понадобиться дополнительная Java 17.
-- **Пиратский режим** переключается пробелом или **Enter**. Во включённом режиме сервер разрешает вход без проверки аккаунта Minecraft. По умолчанию проверка включена.
-- Укажите порт и память и выберите **Создать сервер**. Откройте созданный профиль и нажмите **Enter** для запуска. В окне Minecraft EULA доступна ссылка на условия. Выберите **Принимаю EULA и запускаю** для продолжения или **Отмена** для возврата. CLI сохраняет согласие в папке этого сервера.
-- В запущенной консоли вводите команды Minecraft без начального `/` и отправляйте их клавишей **Enter**.
-- **Ctrl+S** останавливает сервер, **Ctrl+R** перезапускает, **PgUp/PgDn** прокручивают журнал, **Esc** возвращает к списку.
-- **Q** в списке или **Ctrl+C** закрывает CLI. При выходе CLI отправляет Minecraft команду `stop` и даёт ему до 20 секунд на сохранение мира.
-
-Профили и миры лежат в `Glumine-CLI/servers` внутри каталога конфигурации пользователя. Флаг `-data-dir` меняет корневой каталог. Для одного каталога работает один экземпляр CLI, который запускает один сервер за раз.
-
-## Панель управления
-
-В списках работают **↑/↓**, **PgUp/PgDn**, **Home/End** и **Enter**. **Esc** возвращает на предыдущий экран, **R** обновляет его. **T** в библиотеке открывает корзину, **R** заново читает список серверов с диска. Если profile.json повреждён, CLI показывает имя его папки и открывает остальные профили. После исправления файла нажмите **R**.
-
-| Раздел | Возможности |
+| Section | What you can do |
 | --- | --- |
-| Консоль | Запуск, остановка и перезапуск, ввод команд и прокрутка журнала. |
-| Файлы | Навигация по папкам, создание, редактирование и удаление с подтверждением. Enter открывает выбранный файл во встроенном редакторе кода. |
-| Базы данных | Обнаружение SQLite в папке сервера, открытие внешнего файла по пути, просмотр таблиц и отдельных записей, запросы SELECT и WITH. Результаты выводятся по 100 строк. |
-| Игроки | Онлайн-список в консоли, известные игроки, операторы, блокировки и белый список. Для работающего сервера доступны kick, ban, pardon и изменение белого списка. |
-| Резервные копии | Полный ZIP остановленного сервера. Копии хранятся рядом с каталогом серверов в `backups/<идентификатор>`. |
-| Дополнения | Поиск на Modrinth и, для Paper/Purpur, на Hangar. Выбор совместимой версии, проверка SHA-512 или SHA-256 перед установкой, включение и отключение JAR. Требуемые зависимости устанавливаются отдельно. |
-| Сеть | Адрес этого компьютера, адреса интерфейсов с портом Minecraft, получение внешнего IP по запросу. |
-| Настройки | Начальная и максимальная память, флаги JVM, редактирование server.properties, подсчёт размера, переустановка пакета ядра с сохранением мира, перемещение сервера в корзину. |
+| Console | Start the server with **Enter**, send Minecraft commands without a leading slash, and scroll logs with **PgUp/PgDn**. Use **Ctrl+S** to stop or **Ctrl+R** to restart. |
+| Files | Browse directories, create files and folders, edit text, and confirm deletions. |
+| Databases | Browse SQLite files in the server folder or open an external database by path. Inspect tables and run read-only SELECT or WITH queries in pages of 100 rows. |
+| Players | View online and known players, operators, bans, and the whitelist. Send moderation commands to a running server. |
+| Backups | Create ZIP archives of a stopped server. Archives are stored under `backups/<server-id>` in the data directory. |
+| Add-ons | Search Modrinth or, for Paper and Purpur, Hangar. Install compatible versions with checksum verification and enable or disable JARs. Install required dependencies separately. |
+| Network | View local connection addresses and the server port, or look up the public IP on demand. |
+| Settings | Set initial and maximum memory, edit JVM flags and Minecraft properties, check disk usage, reinstall the server software while keeping the world, or move the profile to the trash. |
 
-Корзина сохраняет весь каталог профиля. Из неё можно восстановить сервер или подтвердить окончательное удаление. Потенциально конфликтующие изменения файлов и резервное копирование доступны для остановленного сервера.
+Use the arrow keys to navigate, **Enter** to select, and **Esc** to go back. Long lists support **PgUp/PgDn** and **Home/End**. The trash keeps the entire profile directory until you restore or permanently delete it.
 
-## Редактор кода
+## Code editor
 
-Откройте панель сервера клавишей **F2**, выберите **Файлы**, затем файл и нажмите **Enter**. Редактор подсвечивает синтаксис по имени файла. В широком терминале справа видна структура документа. На любом размере окна **F4** открывает список разделов для перехода.
+Open **F2 → Files**, choose a UTF-8 file, and press **Enter**. Syntax highlighting follows the filename. Wide terminals show an outline beside the document. **F4** opens the outline at any supported terminal size.
 
-| Клавиши | Действие |
+| Shortcut | Action |
 | --- | --- |
-| Ctrl+S · Esc | Сохранить · закрыть с проверкой несохранённых изменений |
-| Ctrl+F · F3 · Alt+P | Найти текст · следующее совпадение · предыдущее |
-| Ctrl+R · Ctrl+G | Заменить одно совпадение · перейти к строке |
-| Shift + стрелки · Ctrl+A | Выделить фрагмент · выделить весь файл |
-| Ctrl+C / X / V | Копировать, вырезать, вставить |
-| Ctrl+Z / Y | Отменить, повторить |
-| Tab / Shift+Tab | Увеличить, уменьшить отступ |
-| F1 | Открыть справку по клавишам |
+| Ctrl+S / Esc | Save / close with an unsaved-changes prompt |
+| Ctrl+F / F3 / Alt+P | Find / next match / previous match |
+| Ctrl+R / Ctrl+G | Replace one match / go to line |
+| Shift + arrows / Ctrl+A | Extend selection / select all |
+| Ctrl+C / Ctrl+X / Ctrl+V | Copy / cut / paste |
+| Ctrl+Z / Ctrl+Y | Undo / redo |
+| Tab / Shift+Tab | Indent / unindent |
+| F1 | Show editor shortcuts |
 
-Редактор работает с UTF-8 до 256 КиБ и сохраняет BOM, табуляцию и исходные окончания строк. Защищённые файлы и файлы запущенного сервера открываются для чтения. Если файл изменился на диске после открытия, сохранение сообщит о конфликте.
+The editor supports files up to 256 KiB and preserves tabs, UTF-8 BOMs, and existing line endings. Managed files and files belonging to a running server open read-only. If another program changes an open file, saving reports a conflict and keeps your edits in the buffer.
+
+## Data and shutdown
+
+Profiles and worlds are stored under `Glumine-CLI/servers` in your user configuration directory. Use `-data-dir` to choose another data directory. Each directory supports one CLI instance and one running server at a time.
+
+Press **Q** in the library or **Ctrl+C** outside the editor to quit. If a server is running, Glumine sends the Minecraft `stop` command and gives it up to 20 seconds to save the world.
